@@ -1,15 +1,15 @@
-# Placeholder Python Streamlit logic for upcoming advanced features in NutriWise
-
 import streamlit as st
 import requests
 import datetime
 import json
 import time
+import os
 
 st.set_page_config(page_title="NutriWise AI", layout="wide")
 st.title("🌱 NutriWise AI - Smart Meal Planner")
 
-base_url = "https://nutriwise-final-perfectbuild.onrender.com"
+# ✅ Dynamic backend URL: falls back to localhost if not set
+base_url = os.environ.get("API_BASE_URL", "http://localhost:5000")
 
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
@@ -38,12 +38,8 @@ if st.session_state.page == "Register":
                 time.sleep(1.5)
                 st.rerun()
             else:
-                try:
-                    msg = response.json().get('message', 'Unknown error')
-                except Exception:
-                    msg = response.text or 'Empty server response'
+                msg = response.json().get('message', 'Unknown error') if response.content else 'Empty server response'
                 st.error(f"Registration failed: {msg}")
-
         except Exception as e:
             st.error(f"Server error: {e}")
 
@@ -68,14 +64,10 @@ elif st.session_state.page == "Login":
                 time.sleep(1.5)
                 st.rerun()
             else:
-        # Parse and display backend error safely
-                try:
-                    st.error(res.json().get('message', 'Invalid credentials.'))
-                except:
-                    st.error("Invalid login response from server.")
+                msg = res.json().get('message', 'Invalid credentials.') if res.content else 'Unknown login error'
+                st.error(msg)
         except Exception as e:
             st.error(f"Login failed: {e}")
-
 
 elif st.session_state.page == "Meal Planner":
     if not st.session_state.logged_in:
@@ -92,14 +84,16 @@ elif st.session_state.page == "Meal Planner":
                 age = st.number_input("Age", min_value=10, max_value=100, step=1, value=prefs.get("age", 25))
                 weight = st.number_input("Weight (kg)", min_value=30.0, value=prefs.get("weight", 70.0))
                 height = st.number_input("Height (cm)", min_value=100.0, value=prefs.get("height", 170.0))
-                activity = st.selectbox("Activity Level", ["Sedentary", "Light", "Moderate", "Active", "Very Active"], index=["Sedentary", "Light", "Moderate", "Active", "Very Active"].index(prefs.get("activity", "Moderate")))
-                goal = st.selectbox("Health Goal", ["Weight Loss", "Muscle Gain", "Diabetes"], index=["Weight Loss", "Muscle Gain", "Diabetes"].index(prefs.get("goal", "Weight Loss")))
-                diet_type = st.selectbox("Diet Type", ["Veg", "Vegan", "Keto", "Gluten-Free"], index=["Veg", "Vegan", "Keto", "Gluten-Free"].index(prefs.get("diet", "Veg")))
+                activity = st.selectbox("Activity Level", ["Sedentary", "Light", "Moderate", "Active", "Very Active"],
+                                        index=["Sedentary", "Light", "Moderate", "Active", "Very Active"].index(prefs.get("activity", "Moderate")))
+                goal = st.selectbox("Health Goal", ["Weight Loss", "Muscle Gain", "Diabetes"],
+                                    index=["Weight Loss", "Muscle Gain", "Diabetes"].index(prefs.get("goal", "Weight Loss")))
+                diet_type = st.selectbox("Diet Type", ["Veg", "Vegan", "Keto", "Gluten-Free"],
+                                         index=["Veg", "Vegan", "Keto", "Gluten-Free"].index(prefs.get("diet", "Veg")))
                 allergies = st.text_area("Allergies or Dislikes (comma separated)", value=prefs.get("allergies", ""))
                 submitted = st.form_submit_button("Generate Plan")
 
             if submitted:
-                # Save to backend
                 requests.post(f"{base_url}/save_preferences", json={
                     "username": st.session_state.username,
                     "age": age,
@@ -142,25 +136,24 @@ elif st.session_state.page == "Meal Planner":
                 for plan in st.session_state.meal_plans[::-1]:
                     with st.expander(f"Plan on {plan['timestamp']}"):
                         st.write(plan)
-                            # ⬇️ Append Evolving AI Feedback Form for latest plan
+
                 latest_plan = st.session_state.meal_plans[-1]
                 evolving_ai_feedback_ui(latest_plan)
 
-            # ⬇️ Feedback history viewer
-                if st.button("📜 Show My Feedback History"):
-                    try:
-                        res = requests.get("http://localhost:5000/get_feedback", params={"username": st.session_state.username})
-                        if res.status_code == 200:
-                            st.subheader("Your Feedback History")
-                            for entry in res.json():
-                                with st.expander(f"🕒 {entry['timestamp']}"):
-                                    st.write(f"**Skipped:** {entry['skipped']}")
-                                    st.write(f"**Disliked:** {entry['disliked']}")
-                                    st.write(f"**Notes:** {entry['notes']}")
-                        else:
-                            st.warning("No feedback history found.")
-                    except Exception as e:
-                        st.error(f"Error fetching feedback history: {e}")
+            if st.button("📜 Show My Feedback History"):
+                try:
+                    res = requests.get(f"{base_url}/get_feedback", params={"username": st.session_state.username})
+                    if res.status_code == 200:
+                        st.subheader("Your Feedback History")
+                        for entry in res.json():
+                            with st.expander(f"🕒 {entry['timestamp']}"):
+                                st.write(f"**Skipped:** {entry['skipped']}")
+                                st.write(f"**Disliked:** {entry['disliked']}")
+                                st.write(f"**Notes:** {entry['notes']}")
+                    else:
+                        st.warning("No feedback history found.")
+                except Exception as e:
+                    st.error(f"Error fetching feedback history: {e}")
 
         with tabs[1]:
             st.header("🔄 Evolving AI Recommendations")
@@ -195,7 +188,7 @@ elif st.session_state.page == "Meal Planner":
                 st.markdown("""
                 - Suggest new dishes based on your preferences and history
                 - Random global cuisine days (Thai Fridays, Indian Mondays)
-                - Replace ingredient suggestions: \"What if I swap tofu with chickpeas?\"
+                - Replace ingredient suggestions: "What if I swap tofu with chickpeas?"
                 """)
                 st.success("Dynamic NLP and tag-based suggestions in roadmap.")
 
@@ -206,9 +199,12 @@ elif st.session_state.page == "Meal Planner":
                 age = st.number_input("Age", min_value=10, max_value=100, value=prefs.get("age", 25), key="profile_age")
                 weight = st.number_input("Weight (kg)", min_value=30.0, value=prefs.get("weight", 70.0), key="profile_weight")
                 height = st.number_input("Height (cm)", min_value=100.0, value=prefs.get("height", 170.0), key="profile_height")
-                activity = st.selectbox("Activity Level", ["Sedentary", "Light", "Moderate", "Active", "Very Active"], index=["Sedentary", "Light", "Moderate", "Active", "Very Active"].index(prefs.get("activity", "Moderate")), key="profile_activity")
-                goal = st.selectbox("Health Goal", ["Weight Loss", "Muscle Gain", "Diabetes"], index=["Weight Loss", "Muscle Gain", "Diabetes"].index(prefs.get("goal", "Weight Loss")), key="profile_goal")
-                diet_type = st.selectbox("Diet Type", ["Veg", "Vegan", "Keto", "Gluten-Free"], index=["Veg", "Vegan", "Keto", "Gluten-Free"].index(prefs.get("diet", "Veg")), key="profile_diet")
+                activity = st.selectbox("Activity Level", ["Sedentary", "Light", "Moderate", "Active", "Very Active"],
+                                        index=["Sedentary", "Light", "Moderate", "Active", "Very Active"].index(prefs.get("activity", "Moderate")), key="profile_activity")
+                goal = st.selectbox("Health Goal", ["Weight Loss", "Muscle Gain", "Diabetes"],
+                                    index=["Weight Loss", "Muscle Gain", "Diabetes"].index(prefs.get("goal", "Weight Loss")), key="profile_goal")
+                diet_type = st.selectbox("Diet Type", ["Veg", "Vegan", "Keto", "Gluten-Free"],
+                                         index=["Veg", "Vegan", "Keto", "Gluten-Free"].index(prefs.get("diet", "Veg")), key="profile_diet")
                 allergies = st.text_area("Allergies or Dislikes (comma separated)", value=prefs.get("allergies", ""), key="profile_allergies")
                 update_btn = st.form_submit_button("Update Preferences")
 
@@ -231,6 +227,8 @@ elif st.session_state.page == "Meal Planner":
                     }
                 else:
                     st.error("Failed to update preferences.")
+
+# Feedback UI function
 def evolving_ai_feedback_ui(plan):
     st.subheader("6. Provide Feedback to Improve Future Plans")
     with st.form("meal_feedback_form"):
@@ -247,29 +245,8 @@ def evolving_ai_feedback_ui(plan):
             "disliked": disliked,
             "notes": notes
         }
-        res = requests.post("http://localhost:5000/meal_feedback", json=payload)
+        res = requests.post(f"{base_url}/meal_feedback", json=payload)
         if res.status_code == 200:
             st.success("✅ Feedback submitted! AI will evolve accordingly.")
         else:
             st.error(f"Failed to submit feedback: {res.text}")
-            # Insert where meal plan is shown (after appending plan)
-if st.session_state.meal_plans:
-    latest_plan = st.session_state.meal_plans[-1]
-    evolving_ai_feedback_ui(latest_plan)
-
-# Optionally: view feedback history
-if st.button("📜 Show My Feedback History"):
-    try:
-        res = requests.get("http://localhost:5000/get_feedback", params={"username": st.session_state.username})
-        if res.status_code == 200:
-            st.subheader("Your Feedback History")
-            for entry in res.json():
-                with st.expander(f"🕒 {entry['timestamp']}"):
-                    st.write(f"**Skipped:** {entry['skipped']}")
-                    st.write(f"**Disliked:** {entry['disliked']}")
-                    st.write(f"**Notes:** {entry['notes']}")
-        else:
-            st.warning("No feedback history found.")
-    except Exception as e:
-        st.error(f"Error fetching feedback history: {e}")
-
