@@ -9,7 +9,7 @@ import time
 st.set_page_config(page_title="NutriWise AI", layout="wide")
 st.title("🌱 NutriWise AI - Smart Meal Planner")
 
-base_url = "http://localhost:5000"
+base_url = "https://nutriwise-final-perfectbuild.onrender.com"
 
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
