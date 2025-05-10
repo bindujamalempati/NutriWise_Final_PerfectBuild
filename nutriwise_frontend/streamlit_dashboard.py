@@ -11,6 +11,29 @@ st.title("🌱 NutriWise AI - Smart Meal Planner")
 # ✅ Dynamic backend URL: falls back to localhost if not set
 base_url = os.environ.get("API_BASE_URL", "http://localhost:5000")
 
+# Feedback UI function moved to top
+def evolving_ai_feedback_ui(plan):
+    st.subheader("6. Provide Feedback to Improve Future Plans")
+    with st.form("meal_feedback_form"):
+        skipped = st.text_input("Skipped Items (comma separated)", placeholder="e.g., Tofu, Broccoli")
+        disliked = st.text_input("Disliked Ingredients (comma separated)", placeholder="e.g., Banana")
+        notes = st.text_area("Any Notes or Suggestions?", placeholder="E.g., too much fiber, prefer Indian breakfast")
+        submitted_feedback = st.form_submit_button("Submit Feedback")
+
+    if submitted_feedback:
+        payload = {
+            "username": st.session_state.username,
+            "timestamp": plan["timestamp"],
+            "skipped": skipped,
+            "disliked": disliked,
+            "notes": notes
+        }
+        res = requests.post(f"{base_url}/meal_feedback", json=payload)
+        if res.status_code == 200:
+            st.success("✅ Feedback submitted! AI will evolve accordingly.")
+        else:
+            st.error(f"Failed to submit feedback: {res.text}")
+
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'page' not in st.session_state:
@@ -227,26 +250,3 @@ elif st.session_state.page == "Meal Planner":
                     }
                 else:
                     st.error("Failed to update preferences.")
-
-# Feedback UI function
-def evolving_ai_feedback_ui(plan):
-    st.subheader("6. Provide Feedback to Improve Future Plans")
-    with st.form("meal_feedback_form"):
-        skipped = st.text_input("Skipped Items (comma separated)", placeholder="e.g., Tofu, Broccoli")
-        disliked = st.text_input("Disliked Ingredients (comma separated)", placeholder="e.g., Banana")
-        notes = st.text_area("Any Notes or Suggestions?", placeholder="E.g., too much fiber, prefer Indian breakfast")
-        submitted_feedback = st.form_submit_button("Submit Feedback")
-
-    if submitted_feedback:
-        payload = {
-            "username": st.session_state.username,
-            "timestamp": plan["timestamp"],
-            "skipped": skipped,
-            "disliked": disliked,
-            "notes": notes
-        }
-        res = requests.post(f"{base_url}/meal_feedback", json=payload)
-        if res.status_code == 200:
-            st.success("✅ Feedback submitted! AI will evolve accordingly.")
-        else:
-            st.error(f"Failed to submit feedback: {res.text}")
