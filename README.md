@@ -4,13 +4,10 @@
 
 > Your intelligent meal planning assistant powered by AI and personalized health tracking.
 
-![NutriWise Banner](https://imgur.com/your_banner.png) <!-- optional custom image/banner -->
-
----
 
 ### 📌 Live Demo
 
-🚀 [Access the App on Render](https://nutriwise-final-perfectbuild.onrender.com)
+🚀 [Access the App on Render]([https://nutriwise-final-perfectbuild.onrender.com](https://nutriwise-final-perfectbuild.onrender.com))
 
 ---
 
