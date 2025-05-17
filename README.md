@@ -5,11 +5,7 @@
 > Your intelligent meal planning assistant powered by AI and personalized health tracking.
 
 
-### 📌 Live Demo
 
-🚀 [Access the App on Render]([https://nutriwise-final-perfectbuild.onrender.com])
-
----
 
 ### 📖 Overview
 
