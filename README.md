@@ -7,7 +7,7 @@
 
 ### 📌 Live Demo
 
-🚀 [Access the App on Render]([https://nutriwise-final-perfectbuild.onrender.com](https://nutriwise-final-perfectbuild.onrender.com))
+🚀 [Access the App on Render]([https://nutriwise-final-perfectbuild.onrender.com])
 
 ---
 
